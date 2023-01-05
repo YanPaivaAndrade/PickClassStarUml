@@ -1,0 +1,28 @@
+{
+    "context-menu": {
+      "#diagram-canvas": [
+        {
+            "id": "pickclass",
+            "label": "PickClass",
+            "submenu": [
+              {
+                "label": "Gerar Excel",
+                "id": "pickclass.excel",
+                "command": "PickClass:start"
+              },
+              { "type": "separator" },
+              {
+                "label": "Gerar PDF",
+                "id": "pickclass.PDF",
+                "command": "pickclass:GetPDF"
+              },
+              {
+                "label": "Gerar Classes",
+                "id": "pickclass.Classes",
+                "command": "pickclass:GetClasses"
+              }
+            ]
+        }
+      ]
+    }
+  }

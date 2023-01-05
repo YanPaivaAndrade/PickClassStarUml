@@ -1,0 +1,26 @@
+{
+  "name": "yan.andrade.pickclass",
+  "title": "PickClass",
+  "description": "PickClass extension.",
+  "homepage": "https://github.com/YanPaivaAndrade/PickClassStarUml",
+  "version": "1.0.0",
+  "keywords": [
+    "ClassDiagram",
+    "Integration Tests",
+    "Testes de integração"
+  ],
+  "author": {
+    "name": "Yan de Paiva",
+    "email": "yanpaiva@ice.ufjf.br",
+    "url": "https://github.com/YanPaivaAndrade"
+  },
+  "license": "MIT",
+  "engines": {
+    "staruml": ">=3.0.0"
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "sheetjs": "^2.0.0",
+    "xlsx": "^0.18.5"
+  }
+}
