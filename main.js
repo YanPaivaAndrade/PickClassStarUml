@@ -1,64 +1,71 @@
-// import * as XLSX from "xlsx/xlsx.mjs"; xlsx.full.min.js
-
-// const { default: XLSX } = require("xlsx/xlsx.js");
-// import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 const XLSX = require("xlsx");
-const fs = require("fs");
+
+exports.init = init;
+function init() {
+  app.commands.register("PickClass:start", start, "Pick Class (start)");
+}
+
 function start() {
-  var project = app.project.getProject();
-  var projectName = project.name;
-  var diagrams = project.ownedElements[0];
-  var classes = diagrams.ownedElements[2];
-  var relacionamentos = classes.ownedElements[0];
-  console.log(classes); // "Book Sample"
-  console.info(relacionamentos instanceof type.UMLModel);
   generateCSV();
 }
 
 function generateCSV() {
-  const EXCEL_TYPE =
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
-  const workBook = XLSX.utils.book_new();
-  workBook.Props = {
-    Title: "agoravai.xlsx",
-    Subject: "teste yan",
-    Author: "yan",
-    CreatedDate: new Date(),
-  };
+  let project = app.project.getProject();
+  let projectName = project.name;
+  let diagrams = project.ownedElements[0];
+  debugger;
+  const workbook = XLSX.utils.book_new();
 
-  workBook.SheetNames.push("exemplo 1");
-  const data = [
-    ["nome", "teste", "funcinou"],
-    ["nome", "teste", "funcinou"],
-    ["nome", "teste", "funcinou"],
-    ["nome", "teste", "funcinou"],
-  ];
-
-  const workSheet = XLSX.utils.aoa_to_sheet(data);
-  console.log(workSheet);
-  workBook.Sheets["exemplo 1"] = workSheet;
-  var workBookOut = XLSX.write(workBook, {
-    bookType: "xlsx",
-    type: "binary",
-  });
-  var myBlob = new Blob([convertWorkBookInBuffer(workBookOut)], {
-    type: "application/octet-stream",
-  });
-  var hiddenElement = document.createElement("a");
-  hiddenElement.href = URL.createObjectURL(myBlob);
-  hiddenElement.target = "_blank";
-  hiddenElement.download = "exemploo.xlsx";
-  hiddenElement.click();
-}
-function convertWorkBookInBuffer(s) {
-  var buf = new ArrayBuffer(s.length);
-  var view = new Uint8Array(buf);
-  for (var i = 0; i < s.length; i++) {
-    view[i] = s.charCodeAt(i) & 0xff;
+  let sheet = [];
+  sheet.push(['', 'FI']);
+  for (let i = 1; i < diagrams.ownedElements.length; i++) {
+    let classe = diagrams.ownedElements[i];
+    let countGeneralization = 0;
+    classe.ownedElements.forEach(element => {
+      if (element.source) {
+        let sourcerId = element.source._id;
+        let classeId = classe._id;
+        let isSourcer = sourcerId == classeId;
+        if (element instanceof type.UMLGeneralization && isSourcer) {
+          countGeneralization++;
+        }
+      }
+    });
+    let line = [classe.name, countGeneralization];
+    sheet.push(line);
+    console.log(classe);
   }
-  return buf;
+  sheet.push([]);
+  sheet.push(['FI = quantidade de classes integradas DEPOIS da classe em questao']);
+  sheet.push(['FIT = somatório dos Fis das classes integradas ANTES da classe em questao']);
+  sheet.push([]);
+
+  sheet.push(['Ordem de integração']);
+  for (let i = 1; i < diagrams.ownedElements.length; i++) {
+    let classe = diagrams.ownedElements[i];
+    let line = [i, classe.name, 'qlqrcoisa'];
+    sheet.push(line);
+    // console.log(classe);
+  }
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheet);
+  let classes = diagrams.ownedElements[2];
+  let relacionamentos = classes.ownedElements[0];
+  console.log(classes); // "Book Sample"
+  console.info(relacionamentos instanceof type.UMLModel);
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Planilha 1');
+
+  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = projectName + '.xlsx';
+  link.click();
+
+  URL.revokeObjectURL(url);
+
 }
-function init() {
-  app.commands.register("PickClass:start", start, "Pick Class (start)");
-}
-exports.init = init;
+
