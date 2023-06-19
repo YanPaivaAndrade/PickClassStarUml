@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "fs": "^0.0.1-security",
+    "lodash": "^4.17.21",
     "sheetjs": "^2.0.0",
     "xlsx": "^0.18.5"
   }
