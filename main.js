@@ -57,10 +57,8 @@ function getAllClass(diagrams) {
   for (let i = 1; i < diagrams.ownedElements.length; i++) {
     let classe = diagrams.ownedElements[i];
     result.push(classe);
-    if(classe.name == "Turma"){
-      console.log(classe.ownedElements[0]);
-    }else if(classe.name == "Professor"){
-      console.log("PROFESSOR -> ",classe.ownedElements[0]);
+    if(classe.name == "Matricula"){
+      console.log("matricula -> ", classe);
     }
   }
   return result;
@@ -142,38 +140,80 @@ function generateFI(classesForIntegration) {
             };
             result.push(fi);
           }
-        }
+        }        
         //composição ta certinho.
         else if(element.end2.aggregation == "shared" || element.end2.aggregation == "composite") {
+          
+          compositeFI.id =  element.end2.reference._id;
+          compositeFI.name = element.end2.reference.name;
+          let index = null;
+          for(let i = 0; i < result.length && index == null; i++){
+            if(result[i].className === classe.name){
+              index = i;
+            }
+          }
+
+          if(index != null && index >= 0){
+              result[index].classFICount++;
+              result[index].classConsiteFi.push(compositeFI);
+          } else {
+            let fi = {
+              classId: classe._id,
+              className: classe.name,
+              classFICount: 1,
+              classConsiteFi:[compositeFI]
+            };
+            result.push(fi);
+          }
           result.push(classe._id);
         }        
+      }else if(element instanceof type.UMLAssociationClassLink){
+        compositeFI.id =  classe._id;
+        compositeFI.name = classe.name;
+        
+        let end1 = element.associationSide.end1.reference;
+        let end2 = element.associationSide.end2.reference;
+
+        let indexEnd1 = null;
+        let indexEnd2 = null;
+        for(let i = 0; i < result.length && (indexEnd1 == null || indexEnd2 == null); i++){
+          if(result[i].className === end1.name){
+            indexEnd1 = i;
+          }
+          if(result[i].className === end2.name){
+            indexEnd2 = i;
+          }
+        }
+        if(indexEnd1 != null && indexEnd1 >= 0){
+          result[indexEnd1].classFICount++;
+          result[indexEnd1].classConsiteFi.push(compositeFI);
+        }else{
+          let fiEnd1 = {
+            classId: end1._id,
+            className: end1.name,
+            classFICount: 1,
+            classConsiteFi:[compositeFI]
+          };
+          result.push(fiEnd1); 
+        }
+        if(indexEnd2 != null && indexEnd2 >= 0){
+          result[indexEnd2].classFICount++;
+          result[indexEnd2].classConsiteFi.push(compositeFI);
+        }else{
+          let fiEnd2 = {
+            classId: end2._id,
+            className: end2.name,
+            classFICount: 1,
+            classConsiteFi:[compositeFI]
+          };
+          result.push(fiEnd2); 
+        }
       }
+
     });
   });
   console.log("resultado -> ",result);
   return result;
 }
 
-function getClassById(classId, resultArray){
-  let classe = _.find(resultArray, function(f){
-    return f.classId == classId;
-  });
-  return classe;
-}
-
-// classesInDiagram.forEach(classe => {
-//   let countGeneralization = _.countBy(generalizations, (id) => {
-//     return id == classe._id ? 'classId' : '';
-//   });
-
-//   if (countGeneralization.classId) {
-//     let line = [classe.name, countGeneralization.classId];
-//     sheet.push(line);
-//   } else {
-//     let line = [classe.name];
-//     sheet.push(line);
-//   }
-
-//   console.log(classe);
-// });
 
