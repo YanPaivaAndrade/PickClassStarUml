@@ -50,7 +50,7 @@ function generateCSV() {
     });
 
     arrayFINotIntegrated.forEach(classNotIntegrated =>{
-      let classIncluded = _.find(classNotIntegrated.classConsiteFi, (ic) => { return ic.name ==  chosenClass.className});
+      let classIncluded = _.find(classNotIntegrated.classesCompositeFi, (ic) => { return ic.name ==  chosenClass.className});
       if(classIncluded){
         stubsInChosenClass += " Stub " + classNotIntegrated.className;
       }
@@ -133,13 +133,13 @@ function generateFI(classesForIntegration) {
 
           if (index != null && index >= 0) {
             result[index].classFICount++;
-            result[index].classConsiteFi.push(compositeFI);
+            result[index].classesCompositeFi.push(compositeFI);
           } else {
             let fi = {
               classId: element.target._id,
               className: element.target.name,
               classFICount: 1,
-              classConsiteFi: [compositeFI],
+              classesCompositeFi: [compositeFI],
               hasIntegrated: false
             };
             result.push(fi);
@@ -155,25 +155,26 @@ function generateFI(classesForIntegration) {
             let unspecifiedConposite = { id: element.end2.reference._id, name: element.end2.reference.name };
             let indexUnspecified = null;
             for (let i = 0; i < result.length && indexUnspecified == null; i++) {
-              if (result[i].className === element.end2.reference.name) {
+              if (result[i].className === element.end1.reference.name) {
                 indexUnspecified = i;
               }
             }
 
             if (indexUnspecified != null && indexUnspecified >= 0) {
               result[indexUnspecified].classFICount++;
-              result[indexUnspecified].classConsiteFi.push(unspecifiedConposite);
+              result[indexUnspecified].classesCompositeFi.push(unspecifiedConposite);
             } else {
               let fi = {
                 classId: compositeFI.id,
                 className: compositeFI.name,
                 classFICount: 1,
-                classConsiteFi: [unspecifiedConposite],
+                classesCompositeFi: [unspecifiedConposite],
                 hasIntegrated: false
               };
               result.push(fi);
             }
           }
+
           let index = null;
           for (let i = 0; i < result.length && index == null; i++) {
             if (result[i].className === element.end2.reference.name) {
@@ -183,86 +184,57 @@ function generateFI(classesForIntegration) {
 
           if (index != null && index >= 0) {
             result[index].classFICount++;
-            result[index].classConsiteFi.push(compositeFI);
+            result[index].classesCompositeFi.push(compositeFI);
           } else {
             let fi = {
               classId: element.end2.reference._id,
               className: element.end2.reference.name,
               classFICount: 1,
-              classConsiteFi: [compositeFI],
+              classesCompositeFi: [compositeFI],
               hasIntegrated: false
             };
             result.push(fi);
           }
         }
-        //composição ta certinho.
         else if (element.end2.aggregation == "shared" || element.end2.aggregation == "composite") {
 
           compositeFI.id = element.end2.reference._id;
           compositeFI.name = element.end2.reference.name;
-          let index = null;
-          for (let i = 0; i < result.length && index == null; i++) {
-            if (result[i].className === classe.name) {
-              index = i;
-            }
-          }
+          
+          let indexClass = _.findIndex(result, x => x.className === classe.name);
 
-          if (index != null && index >= 0) {
-            result[index].classFICount++;
-            result[index].classConsiteFi.push(compositeFI);
+          if (indexClass != null && indexClass >= 0) {
+            result[indexClass].classFICount++;
+            result[indexClass].classesCompositeFi.push(compositeFI);
           } else {
-            let fi = {
-              classId: classe._id,
-              className: classe.name,
-              classFICount: 1,
-              classConsiteFi: [compositeFI],
-              hasIntegrated: false
-            };
-            result.push(fi);
+            let classFI =  createFIObject(classe._id, classe.name, compositeFI);
+            result.push(classFI);
           }
         }
       } else if (element instanceof type.UMLAssociationClassLink) {
         compositeFI.id = classe._id;
         compositeFI.name = classe.name;
 
-        let end1 = element.associationSide.end1.reference;
-        let end2 = element.associationSide.end2.reference;
+        let firstReference = element.associationSide.end1.reference;
+        let secondReference = element.associationSide.end2.reference;
 
-        let indexEnd1 = null;
-        let indexEnd2 = null;
-        for (let i = 0; i < result.length && (indexEnd1 == null || indexEnd2 == null); i++) {
-          if (result[i].className === end1.name) {
-            indexEnd1 = i;
-          }
-          if (result[i].className === end2.name) {
-            indexEnd2 = i;
-          }
-        }
-        if (indexEnd1 != null && indexEnd1 >= 0) {
-          result[indexEnd1].classFICount++;
-          result[indexEnd1].classConsiteFi.push(compositeFI);
+        let indexFirstReference = _.findIndex(result, x => x.className === firstReference.name);
+        let indexSecondReference = _.findIndex(result, x => x.className === secondReference.name);
+        
+        if (indexFirstReference != null && indexFirstReference >= 0) {
+          result[indexFirstReference].classFICount++;
+          result[indexFirstReference].classesCompositeFi.push(compositeFI);
         } else {
-          let fiEnd1 = {
-            classId: end1._id,
-            className: end1.name,
-            classFICount: 1,
-            classConsiteFi: [compositeFI],
-            hasIntegrated: false
-          };
-          result.push(fiEnd1);
+          let firstElementAssociation = createFIObject(firstReference._id, firstReference.name, compositeFI);
+          result.push(firstElementAssociation);
         }
-        if (indexEnd2 != null && indexEnd2 >= 0) {
-          result[indexEnd2].classFICount++;
-          result[indexEnd2].classConsiteFi.push(compositeFI);
+        if (indexSecondReference != null && indexSecondReference >= 0) {
+          result[indexSecondReference].classFICount++;
+          result[indexSecondReference].classesCompositeFi.push(compositeFI);
         } else {
-          let fiEnd2 = {
-            classId: end2._id,
-            className: end2.name,
-            classFICount: 1,
-            classConsiteFi: [compositeFI],
-            hasIntegrated: false
-          };
-          result.push(fiEnd2);
+          let secondElementAssociation = createFIObject(secondReference._id, secondReference.name, compositeFI);
+          
+          result.push(secondElementAssociation);
         }
       }
     });
@@ -280,7 +252,7 @@ function generateFI(classesForIntegration) {
         classId: classe._id,
         className: classe.name,
         classFICount: 0,
-        classConsiteFi: [],
+        classesCompositeFi: [],
         hasIntegrated: false
       };
       result.push(fi);
@@ -293,7 +265,7 @@ function generateFI(classesForIntegration) {
 function getFit(className, arrayFi) {
   let countFIS = 0;
   arrayFi.forEach(element2 => {
-    let item = _.find(element2.classConsiteFi, ['name', className]);
+    let item = _.find(element2.classesCompositeFi, ['name', className]);
     if (item) {
       countFIS += element2.classFICount;
     }
@@ -340,7 +312,7 @@ function chooseClass(arrayFIT, arrayFi) {
 
     if (result.className == element2.className) {
       element2.hasIntegrated = true;
-      element2.classConsiteFi.forEach(a => {
+      element2.classesCompositeFi.forEach(a => {
         let index = null;
         for (let i = 0; i < arrayFIT.length && index == null; i++) {
           if (arrayFIT[i].className === a.name) {
@@ -364,3 +336,13 @@ function chooseClass(arrayFIT, arrayFi) {
   return result;
 }
 
+function createFIObject(classId, className, compositeFI){
+  let object = {
+    classId: classId,
+    className: className,
+    classFICount: 1,
+    classesCompositeFi: [compositeFI],
+    hasIntegrated: false
+  };
+  return object;
+}
