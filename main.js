@@ -18,11 +18,11 @@ function generateCSV() {
   let integratedClasses = [];
   let classesForIntegration = getAllClass(diagrams);
   debugger;
-  _.orderBy(classesForIntegration, 'name', 'desc');
 
   let headerSheett = createHeaderSheet(diagrams.ownedElements.length);
   sheet.push(headerSheett);
   let arrayFi = generateFI(classesForIntegration);
+  arrayFi = _.orderBy(arrayFi, 'className', 'asc');
   let table = [];
   arrayFi.forEach(element => {
     let line = [element.className, element.classFICount];
