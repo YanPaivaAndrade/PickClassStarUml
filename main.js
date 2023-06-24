@@ -17,7 +17,6 @@ function generateCSV() {
   let sheet = [];
   let integratedClasses = [];
   let classesForIntegration = getAllClass(diagrams);
-  debugger;
 
   let headerSheett = createHeaderSheet(diagrams.ownedElements.length);
   sheet.push(headerSheett);
@@ -37,16 +36,16 @@ function generateCSV() {
 
 
   for (let i = 1; i <= classesForIntegration.length; i++) {
-    for (let j = 0; j < table.length; j++) {
-      let className = table[j][0];
+    for (const element of table) {
+      let className = element[0];
       let fitValue = _.find(arrayFIT, (f) => { return f.className == className });
-      table[j].push(fitValue.fit);
+      element.push(fitValue.fit);
     }
 
     let chosenClass = chooseClass(arrayFIT, arrayFi);
     let stubsInChosenClass = "";
     let arrayFINotIntegrated = arrayFi.filter(function (item) {
-      return item.hasIntegrated == false;
+      return !item.hasIntegrated;
     });
 
     arrayFINotIntegrated.forEach(classNotIntegrated => {
@@ -243,7 +242,6 @@ function generateFI(classesForIntegration) {
       result.push(fi);
     }
   });
-  console.log("result fi -> ", result);
   return result;
 }
 
@@ -293,28 +291,19 @@ function chooseClass(arrayFIT, arrayFi) {
     });
   }
 
-  arrayFi.forEach(element2 => {
+  arrayFi.forEach(fiObject => {
 
-    if (result.className == element2.className) {
-      element2.hasIntegrated = true;
-      element2.classesCompositeFi.forEach(a => {
-        let index = null;
-        for (let i = 0; i < arrayFIT.length && index == null; i++) {
-          if (arrayFIT[i].className === a.name) {
-            index = i;
-          }
-        }
-        if (arrayFIT[index].fit != '-') {
+    if (result.className === fiObject.className) {
+      fiObject.hasIntegrated = true;
+      fiObject.classesCompositeFi.forEach(classCompositeFIObject => {
+        let index = _.findIndex(arrayFIT, x => x.className === classCompositeFIObject.name);
+        let classCompositeHasINtegrated = arrayFIT[index].fit === '-';
+        if (!classCompositeHasINtegrated) {
           arrayFIT[index].fit = arrayFIT[index].fit - result.classFICount;
         }
       });
-      let indexResult = null;
-      for (let i = 0; i < arrayFIT.length && indexResult == null; i++) {
-        if (arrayFIT[i].className === result.className) {
-          indexResult = i;
-        }
-      }
-
+      
+      let indexResult = _.findIndex(arrayFIT, x => x.className === result.className);
       arrayFIT[indexResult].fit = "-";
     }
   });
