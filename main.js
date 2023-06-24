@@ -118,6 +118,7 @@ function createHeaderSheet(classCount) {
 function generateFI(classesForIntegration) {
   let result = [];
   classesForIntegration.forEach(classe => {
+    let listAssociationsAnalyzed = [];
     classe.ownedElements.forEach(element => {
       let compositeFI = { id: '', name: '' };
       if (element.target) {
@@ -136,50 +137,60 @@ function generateFI(classesForIntegration) {
           }
         }
       } else if (element instanceof type.UMLAssociation) {
-        if (element.end2.aggregation == "none") {
-          let firstReference = element.end1.reference;
-          compositeFI.id = firstReference._id;
-          compositeFI.name = firstReference.name;
 
-          if (element.end2.navigable == "unspecified") {
+        let classOfRelationship = element.end2.reference
+        let indexAssociationsAnalyzed = _.findIndex(listAssociationsAnalyzed, x => x === classOfRelationship.name);
+        let unanalyzedAssociation = indexAssociationsAnalyzed === -1;
+        if (unanalyzedAssociation) {
+          listAssociationsAnalyzed.push(classOfRelationship.name);
+          if (element.end2.aggregation == "none") {
+            let firstReference = element.end1.reference;
+            compositeFI.id = firstReference._id;
+            compositeFI.name = firstReference.name;
+
+            if (element.end2.navigable == "unspecified") {
+              let secondReference = element.end2.reference;
+              let isCircularReference = secondReference.name === firstReference.name;
+              if (!isCircularReference) {
+                let unspecifiedConposite = { id: secondReference._id, name: secondReference.name };
+
+                let indexUnspecified = _.findIndex(result, x => x.className === firstReference.name);
+
+                if (indexUnspecified != null && indexUnspecified >= 0) {
+                  result[indexUnspecified].classFICount++;
+                  result[indexUnspecified].classesCompositeFi.push(unspecifiedConposite);
+                } else {
+                  let firstElementAssociation = createFIObject(firstReference._id, firstReference.name, unspecifiedConposite);
+                  result.push(firstElementAssociation);
+                }
+              }
+            }
+
             let secondReference = element.end2.reference;
-            let unspecifiedConposite = { id: secondReference._id, name: secondReference.name };
-            
-            let indexUnspecified = _.findIndex(result, x => x.className === firstReference.name);
+            let indexSecondReference = _.findIndex(result, x => x.className === secondReference.name);
 
-            if (indexUnspecified != null && indexUnspecified >= 0) {
-              result[indexUnspecified].classFICount++;
-              result[indexUnspecified].classesCompositeFi.push(unspecifiedConposite);
+            if (indexSecondReference != null && indexSecondReference >= 0) {
+              result[indexSecondReference].classFICount++;
+              result[indexSecondReference].classesCompositeFi.push(compositeFI);
             } else {
-              let firstElementAssociation = createFIObject(firstReference._id, firstReference.name, unspecifiedConposite);
-              result.push(firstElementAssociation);
+              let secondElementAssociation = createFIObject(secondReference._id, secondReference.name, compositeFI);
+              result.push(secondElementAssociation);
             }
           }
+          else if (element.end2.aggregation == "shared" || element.end2.aggregation == "composite") {
 
-          let secondReference = element.end2.reference;
-          let indexSecondReference = _.findIndex(result, x => x.className === secondReference.name);
+            compositeFI.id = element.end2.reference._id;
+            compositeFI.name = element.end2.reference.name;
 
-          if (indexSecondReference != null && indexSecondReference >= 0) {
-            result[indexSecondReference].classFICount++;
-            result[indexSecondReference].classesCompositeFi.push(compositeFI);
-          } else {
-            let secondElementAssociation = createFIObject(secondReference._id, secondReference.name, compositeFI);
-            result.push(secondElementAssociation);
-          }
-        }
-        else if (element.end2.aggregation == "shared" || element.end2.aggregation == "composite") {
+            let indexClass = _.findIndex(result, x => x.className === classe.name);
 
-          compositeFI.id = element.end2.reference._id;
-          compositeFI.name = element.end2.reference.name;
-
-          let indexClass = _.findIndex(result, x => x.className === classe.name);
-
-          if (indexClass != null && indexClass >= 0) {
-            result[indexClass].classFICount++;
-            result[indexClass].classesCompositeFi.push(compositeFI);
-          } else {
-            let classFI = createFIObject(classe._id, classe.name, compositeFI);
-            result.push(classFI);
+            if (indexClass != null && indexClass >= 0) {
+              result[indexClass].classFICount++;
+              result[indexClass].classesCompositeFi.push(compositeFI);
+            } else {
+              let classFI = createFIObject(classe._id, classe.name, compositeFI);
+              result.push(classFI);
+            }
           }
         }
       }
