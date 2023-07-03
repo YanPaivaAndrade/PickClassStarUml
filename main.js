@@ -20,6 +20,7 @@ function generateCSV() {
 
   let headerSheett = createHeaderSheet(diagrams.ownedElements.length);
   sheet.push(headerSheett);
+  classesForIntegration = _.orderBy(classesForIntegration, 'name', 'asc');
   let arrayFi = generateFI(classesForIntegration);
   arrayFi = _.orderBy(arrayFi, 'className', 'asc');
   let table = [];
