@@ -66,8 +66,8 @@ function generateCSV() {
 
 
   sheet.push([]);
-  sheet.push(['FI = Number of integrated classes AFTER the given class.']);
-  sheet.push(['FIT = Sum of the FIs of the integrated classes BEFORE the given class.']);
+  sheet.push(['IF = Number of integrated classes AFTER the given class.']);
+  sheet.push(['LIF = Sum of the FIs of the integrated classes BEFORE the given class.']);
   sheet.push([]);
   sheet.push(['Integration order']);
 
