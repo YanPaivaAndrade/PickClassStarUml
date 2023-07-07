@@ -66,10 +66,10 @@ function generateCSV() {
 
 
   sheet.push([]);
-  sheet.push(['FI = quantidade de classes integradas DEPOIS da classe em questao']);
-  sheet.push(['FIT = somatório dos Fis das classes integradas ANTES da classe em questao']);
+  sheet.push(['FI = Number of integrated classes AFTER the given class.']);
+  sheet.push(['FIT = Sum of the FIs of the integrated classes BEFORE the given class.']);
   sheet.push([]);
-  sheet.push(['Ordem de integração']);
+  sheet.push(['Integration order']);
 
   integratedClasses.forEach(item => {
     sheet.push([item.order, item.className, item.stubs]);
@@ -98,9 +98,6 @@ function getAllClass(diagrams) {
   for (let i = 1; i < diagrams.ownedElements.length; i++) {
     let classe = diagrams.ownedElements[i];
     result.push(classe);
-    if (classe.name == "Aluno") {
-      console.log("Aluno -> ", classe);
-    }
   }
   return result;
 }
@@ -108,9 +105,9 @@ function getAllClass(diagrams) {
 function createHeaderSheet(classCount) {
   let header = [];
   header.push("");
-  header.push("FI");
+  header.push("IF");
   for (let i = 1; i < classCount; i++) {
-    header.push("FIT" + i);
+    header.push("LIF" + i);
   }
   return header;
 }

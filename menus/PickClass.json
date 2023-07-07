@@ -5,7 +5,7 @@
       "label": "PickClass",
       "submenu": [
         {
-          "label": "Gerar Excel",
+          "label": "Generate Document",
           "id": "pickclass.excel",
           "command": "PickClass:start"
         }
