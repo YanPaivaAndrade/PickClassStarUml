@@ -118,42 +118,59 @@ function generateFI(classesForIntegration) {
     let listAssociationsAnalyzed = [];
     classe.ownedElements.forEach(element => {
       let compositeFI = { id: '', name: '' };
-      if (element.target) {
-        if (element instanceof type.UMLGeneralization) {
-          compositeFI.id = element.source._id;
-          compositeFI.name = element.source.name;
-          let targetElement = element.target;
-          let indexTarget = _.findIndex(result, x => x.className === targetElement.name);
+      if (element instanceof type.UMLGeneralization) {
+        if (element.target) {
+          let specializedClass = element.source;
+          compositeFI.id = specializedClass._id;
+          compositeFI.name = specializedClass.name;
 
-          if (indexTarget != null && indexTarget >= 0) {
-            result[indexTarget].classFICount++;
-            result[indexTarget].classesCompositeFi.push(compositeFI);
+          let generalizationClass = element.target;
+          let indexGeneralizationClass = _.findIndex(result, x => x.className === generalizationClass.name);
+
+          if (hasCalculatedFIForClass(indexGeneralizationClass)) {
+            result[indexGeneralizationClass].classFICount++;
+            result[indexGeneralizationClass].classesCompositeFi.push(compositeFI);
           } else {
-            let targetElementAssociation = createFIObject(targetElement._id, targetElement.name, compositeFI);
+            let targetElementAssociation = createFIObject(generalizationClass._id, generalizationClass.name, compositeFI);
             result.push(targetElementAssociation);
           }
         }
       } else if (element instanceof type.UMLAssociation) {
 
-        let classOfRelationship = element.end2.reference
+        let classOfRelationship = element.end2.reference;
         let indexAssociationsAnalyzed = _.findIndex(listAssociationsAnalyzed, x => x === classOfRelationship.name);
         let unanalyzedAssociation = indexAssociationsAnalyzed === -1;
         if (unanalyzedAssociation) {
           listAssociationsAnalyzed.push(classOfRelationship.name);
-          if (element.end2.aggregation == "none") {
+          let isTargetPartAssociation = element.end2.aggregation == "shared" || element.end2.aggregation == "composite";
+
+          let isDirectAssociationOrBidirectionalAssociation = element.end2.aggregation == "none";
+          if (isDirectAssociationOrBidirectionalAssociation) {
             let firstReference = element.end1.reference;
             compositeFI.id = firstReference._id;
             compositeFI.name = firstReference.name;
 
-            if (element.end2.navigable == "unspecified") {
+            let secondReference = element.end2.reference;
+            let indexSecondReference = _.findIndex(result, x => x.className === secondReference.name);
+
+            if (hasCalculatedFIForClass(indexSecondReference)) {
+              result[indexSecondReference].classFICount++;
+              result[indexSecondReference].classesCompositeFi.push(compositeFI);
+            } else {
+              let secondElementAssociation = createFIObject(secondReference._id, secondReference.name, compositeFI);
+              result.push(secondElementAssociation);
+            }
+
+            let isBidirectionalAssociation = element.end2.navigable == "unspecified";
+            if (isBidirectionalAssociation) {
               let secondReference = element.end2.reference;
               let isCircularReference = secondReference.name === firstReference.name;
               if (!isCircularReference) {
                 let unspecifiedConposite = { id: secondReference._id, name: secondReference.name };
 
                 let indexUnspecified = _.findIndex(result, x => x.className === firstReference.name);
-
-                if (indexUnspecified != null && indexUnspecified >= 0) {
+                
+                if (hasCalculatedFIForClass(indexUnspecified)) {
                   result[indexUnspecified].classFICount++;
                   result[indexUnspecified].classesCompositeFi.push(unspecifiedConposite);
                 } else {
@@ -163,27 +180,16 @@ function generateFI(classesForIntegration) {
               }
             }
 
-            let secondReference = element.end2.reference;
-            let indexSecondReference = _.findIndex(result, x => x.className === secondReference.name);
-
-            if (indexSecondReference != null && indexSecondReference >= 0) {
-              result[indexSecondReference].classFICount++;
-              result[indexSecondReference].classesCompositeFi.push(compositeFI);
-            } else {
-              let secondElementAssociation = createFIObject(secondReference._id, secondReference.name, compositeFI);
-              result.push(secondElementAssociation);
-            }
           }
-          else if (element.end2.aggregation == "shared" || element.end2.aggregation == "composite") {
+          else if (isTargetPartAssociation) {
+            let targetClass = element.end2.reference;
+            compositeFI.id = targetClass._id;
+            compositeFI.name = targetClass.name;
 
-            compositeFI.id = element.end2.reference._id;
-            compositeFI.name = element.end2.reference.name;
-
-            let indexClass = _.findIndex(result, x => x.className === classe.name);
-
-            if (indexClass != null && indexClass >= 0) {
-              result[indexClass].classFICount++;
-              result[indexClass].classesCompositeFi.push(compositeFI);
+            let indexPartClass = _.findIndex(result, x => x.className === classe.name);
+            if (hasCalculatedFIForClass(indexPartClass)) {
+              result[indexPartClass].classFICount++;
+              result[indexPartClass].classesCompositeFi.push(compositeFI);
             } else {
               let classFI = createFIObject(classe._id, classe.name, compositeFI);
               result.push(classFI);
@@ -201,16 +207,17 @@ function generateFI(classesForIntegration) {
         let indexFirstReference = _.findIndex(result, x => x.className === firstReference.name);
         let indexSecondReference = _.findIndex(result, x => x.className === secondReference.name);
 
-        if (indexFirstReference != null && indexFirstReference >= 0) {
+        if (hasCalculatedFIForClass(indexFirstReference)) {
           result[indexFirstReference].classFICount++;
           result[indexFirstReference].classesCompositeFi.push(compositeFI);
         } else {
           let firstElementAssociation = createFIObject(firstReference._id, firstReference.name, compositeFI);
           result.push(firstElementAssociation);
         }
-
-        if (indexSecondReference != indexFirstReference) {
-          if (indexSecondReference != null && indexSecondReference >= 0) {
+        
+        let isSelfAssociation = indexSecondReference == indexFirstReference;
+        if (!isSelfAssociation) {
+          if (hasCalculatedFIForClass(indexSecondReference)) {
             result[indexSecondReference].classFICount++;
             result[indexSecondReference].classesCompositeFi.push(compositeFI);
           } else {
@@ -223,13 +230,9 @@ function generateFI(classesForIntegration) {
   });
 
   classesForIntegration.forEach(classe => {
-    let index = null;
-    for (let i = 0; i < result.length && index == null; i++) {
-      if (result[i].className === classe.name) {
-        index = i;
-      }
-    }
-    if (index == null) {
+    let indexClass = _.findIndex(result, x => x.className === classe.name);
+
+    if (!hasCalculatedFIForClass(indexClass)) {
       let fi = {
         classId: classe._id,
         className: classe.name,
@@ -317,4 +320,8 @@ function createFIObject(classId, className, compositeFI) {
     hasIntegrated: false
   };
   return object;
+}
+
+function hasCalculatedFIForClass(indexClass){
+  return indexClass != null && indexClass >= 0;
 }
